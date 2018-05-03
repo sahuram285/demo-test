@@ -119,6 +119,8 @@ class User < ActiveRecord::Base
       ((roles_mask.to_i || 0) & 2**ROLES.index(r)).zero?
     end
   end
+  # Why we are using these above 2 methods?
+  # If I'm not wrong we can easily add role or find for the user roles with rolify.
 
   def following?(other_user)
     relationships.find_by(followed_id: other_user.id).present?

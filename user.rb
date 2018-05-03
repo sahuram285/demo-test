@@ -1,14 +1,14 @@
 class User < ActiveRecord::Base
   # Setup accessible (or protected) attributes for your model
+  attr_accessible :app_role_ids, :institution_id, :is_verified, :artist_image, :artist_bio
+  attr_accessible :beats_count, :tracks_count, :last_sign_in_at, :followers_count, :followed_users_count
+  attr_accessible :current_flagged_count, :suspended_at, :suspended, :deleted, :deleted_at, :featured
+  attr_accessible :dob, :total_points, :confirmed_at, :sign_in_count, :roles, :current_sign_in_at
   attr_accessible :id, :is_active, :email, :password, :password_confirmation, :username, :agree_to_terms
   attr_accessible :location, :image, :screen_name, :bio, :remove_image, :image_cache, :gender
-  attr_accessible :dob, :total_points, :confirmed_at, :sign_in_count, :roles, :current_sign_in_at
-  attr_accessible :app_role_ids, :institution_id, :is_verified, :artist_image, :artist_bio
-  attr_accessible :remove_artist_image, :artist_image_cache, :slug, :total_flagged_count
-  attr_accessible :current_flagged_count, :suspended_at, :suspended, :deleted, :deleted_at, :featured
-  attr_accessible :beats_count, :tracks_count, :last_sign_in_at, :followers_count, :followed_users_count
-  attr_accessible :remote_image_url, :confirmation_token, :reposts_count, :updated_at
   attr_accessible :newsletter_subscription, :social_accounts
+  attr_accessible :remote_image_url, :confirmation_token, :reposts_count, :updated_at
+  attr_accessible :remove_artist_image, :artist_image_cache, :slug, :total_flagged_count
 
   attr_accessor :login
 
@@ -32,22 +32,22 @@ class User < ActiveRecord::Base
   # macros
   acts_as_liker
   acts_as_mentionable
-  mount_uploader :image, PictureUploader
   mount_uploader :artist_image, PictureUploader
+  mount_uploader :image, PictureUploader
   devise :database_authenticatable, :registerable, :omniauthable, :confirmable,
          :recoverable, :rememberable, :trackable, :validatable
   friendly_id :generate_slug, use: :slugged
 
   # model constants
+  ADMIN_EMAILS = %w(vibhor@trantorinc.com rahul@speazie.com sahil@speazie.com b.wichmann@artemia.com j.ogan@artemia.com k.silva@artemia.com).freeze
   ROLES = %w(Vocalist Producer Admin).freeze
-  ADMIN_EMAILS = ['vibhor@trantorinc.com', 'rahul@speazie.com', 'sahil@speazie.com', 'b.wichmann@artemia.com', 'j.ogan@artemia.com', 'k.silva@artemia.com'].freeze
 
   # model validations
   validates :username, presence: true, length: { minimum: 3, maximum: 35 }
-  validates_length_of :screen_name, in: 3..35, allow_blank: true
-  validates :agree_to_terms, acceptance: { message: 'Please accept Terms and Conditions' }, on: :create
   validates :username, format: { with: /\A[a-zA-Z0-9_]+\Z/, message: :format }
   validates :username, uniqueness: { message: :taken }, unless: :destroyed?
+  validates_length_of :screen_name, in: 3..35, allow_blank: true
+  validates :agree_to_terms, acceptance: { message: 'Please accept Terms and Conditions' }, on: :create
 
   # Model Associations
   # user's whom i am follwoing
@@ -90,16 +90,16 @@ class User < ActiveRecord::Base
 
   # Scopes
   default_scope { where(is_active: true, suspended: false, deleted: false) }
-  scope :search_user, ->(user_name) { where('users.username like ? OR users.screen_name like ?', "#{user_name}%", "#{user_name}%").order('users.username').select_user_fields }
   scope :all_users, ->(logged_user) { where.not(id: logged_user.id) }
   scope :except_users, ->(user_ids) { where('users.id NOT IN (?)', user_ids) }
+  scope :featured_artists, -> { where(featured: true) }
   scope :for_user_unscoped, -> { unscope(where: [:is_active, :deleted, :suspended]) }
   scope :popular, -> { order('total_points DESC') }
-  scope :featured_artists, -> { where(featured: true) }
-  scope :select_user_fields, -> { select('users.id, users.username, users.screen_name, users.image, users.updated_at, users.location, users.is_verified') }
-  scope :user_worker_fields, -> { select(:id, :email, :username, :screen_name) }
   scope :search_priority, ->(relationships) { order(build_searching_order(relationships)) }
+  scope :search_user, ->(user_name) { where('users.username like ? OR users.screen_name like ?', "#{user_name}%", "#{user_name}%").order('users.username').select_user_fields }
+  scope :select_user_fields, -> { select('users.id, users.username, users.screen_name, users.image, users.updated_at, users.location, users.is_verified') }
   scope :tagging, ->(current_user, keyword) { all_users(current_user).where('username like ?', "#{keyword}%").order('username').select_user_fields.limit(TAGGING_RESULTS) }
+  scope :user_worker_fields, -> { select(:id, :email, :username, :screen_name) }
   serialize :social_accounts, Hash
 
   def search_with_order(search, relationships)

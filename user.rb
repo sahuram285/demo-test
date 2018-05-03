@@ -152,13 +152,11 @@ class User < ActiveRecord::Base
   def recommended_users
     strategies = [:leaderboard_toppers, :trending_users]
     tmp_users = []
-    following_ids = leader_ids
-    users = strategies.map do |strategy|
-      result_users = send(strategy, (tmp_users.collect(&:id) + following_ids + [id])).sample(RECOMMENDED_USERS_COUNT)
-      tmp_users += result_users
-      result_users.flatten
+    strategies.map do |strategy|
+      result_users = send(strategy, (tmp_users.collect(&:id) + leader_ids + [id])).sample(RECOMMENDED_USERS_COUNT)
+      tmp_users += result_users.flatten
     end
-    filter_engine(users, RECOMMENDED_USERS_RANGES, RECOMMENDED_USERS_COUNT)
+    filter_engine(tmp_users.flatten, RECOMMENDED_USERS_RANGES, RECOMMENDED_USERS_COUNT)
   end
 
   # To return search users list

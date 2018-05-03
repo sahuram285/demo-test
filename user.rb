@@ -238,8 +238,7 @@ class User < ActiveRecord::Base
   end
 
   def following_or_follows?(recipient_id)
-    follows_and_follower_ids = following_and_followers_ids
-    follows_and_follower_ids.include?(recipient_id)
+    following_and_followers_ids.include?(recipient_id)
   end
 
   def update_points
@@ -257,14 +256,10 @@ class User < ActiveRecord::Base
 
   def find_level
     case points
-    when BAND_CAMPER
-      BAND_CAMPER_LABEL
-    when JAM_MASTER
-      JAM_MASTER_LABEL
-    when HEAD_BANGER
-      HEAD_BANGER_LABEL
-    when ROLLING_STONE
-      ROLLING_STONE_LABEL
+    when BAND_CAMPER then BAND_CAMPER_LABEL
+    when JAM_MASTER then JAM_MASTER_LABEL
+    when HEAD_BANGER then HEAD_BANGER_LABEL
+    when ROLLING_STONE then ROLLING_STONE_LABEL
     end
   end
 

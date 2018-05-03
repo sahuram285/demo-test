@@ -425,14 +425,10 @@ class User < ActiveRecord::Base
 
     def find_level(points)
       case points
-      when BAND_CAMPER
-        BAND_CAMPER_LABEL
-      when JAM_MASTER
-        JAM_MASTER_LABEL
-      when HEAD_BANGER
-        HEAD_BANGER_LABEL
-      when ROLLING_STONE
-        ROLLING_STONE_LABEL
+      when BAND_CAMPER then BAND_CAMPER_LABEL
+      when JAM_MASTER then JAM_MASTER_LABEL
+      when HEAD_BANGER then HEAD_BANGER_LABEL
+      when ROLLING_STONE then ROLLING_STONE_LABEL
       end
     end
 
@@ -441,11 +437,7 @@ class User < ActiveRecord::Base
     end
 
     def users_list(users)
-      users_list = []
-      users.each do |user|
-        users_list << user_detail(user)
-      end
-      users_list
+      users.map{ |user| user_detail(user) }
     end
 
     def user_detail(user)
@@ -489,11 +481,11 @@ class User < ActiveRecord::Base
       second_hop_leaders_id = Relationship.where(follower_id: leaders_id).pluck(:followed_id).uniq
       second_hop_leaders_id -= leaders_id
       orders.each_with_index do |priority, index|
-        if priority == :following
-          order_clause << sanitize_sql_array([' WHEN users.id in (?) THEN ? ', leaders_id, index])
-        elsif priority == :friends_friend
-          order_clause << sanitize_sql_array([' WHEN users.id in (?) THEN ? ', second_hop_leaders_id, index])
-        end
+        order_clause << if priority == :following
+                          sanitize_sql_array([' WHEN users.id in (?) THEN ? ', leaders_id, index])
+                        elsif priority == :friends_friend
+                          sanitize_sql_array([' WHEN users.id in (?) THEN ? ', second_hop_leaders_id, index])
+                        end
       end
       order_clause << ' END DESC'
     end

@@ -151,24 +151,15 @@ class User < ActiveRecord::Base
   # Then will filter result and return some limit of users currently its 15
   def recommended_users
     strategies = [:leaderboard_toppers, :trending_users]
-    tmp_users = []
-    strategies.map do |strategy|
-      result_users = send(strategy, (tmp_users.collect(&:id) + leader_ids + [id])).sample(RECOMMENDED_USERS_COUNT)
-      tmp_users += result_users.flatten
-    end
-    filter_engine(tmp_users.flatten, RECOMMENDED_USERS_RANGES, RECOMMENDED_USERS_COUNT)
+    users = strategies.map{ |strategy| send(strategy, (tmp_users.collect(&:id) + leader_ids + [id])).sample(RECOMMENDED_USERS_COUNT) }.flatten
+    filter_engine(users, RECOMMENDED_USERS_RANGES, RECOMMENDED_USERS_COUNT)
   end
 
   # To return search users list
   # based on the search keyword
   def search_users(search)
-    strategies = [:following_users, :friends_friends, :default]
-    except_users = []
-    strategies.map do |strategy|
-      result_users = send(strategy, search, (except_users.collect(&:id) << id))
-      except_users += result_users
-      result_users
-    end.flatten
+    strategies =
+    strategies.map{ |strategy| send(strategy, search, (except_users.collect(&:id) << id)) }.flatten
   end
 
   def follow!(other_user)
@@ -176,9 +167,7 @@ class User < ActiveRecord::Base
   end
 
   def unfollow!(other_user)
-    relationships.find_by(followed_id: other_user.id).destroy
-  rescue
-    nil
+    relationships.find_by(followed_id: other_user.id).destroy rescue nil
   end
 
   def points
@@ -186,19 +175,17 @@ class User < ActiveRecord::Base
   end
 
   def filter_my_tracks_beats(params)
-    if params[:type].present?
-      songs_type = params[:type]
-    else
-      if beats_count == 0
-        if tracks_count == 0 & reposts_count > 0
-          songs_type = 'Repost'
-        elsif tracks_count > 0
-          songs_type = 'Track'
-        end
-      else
-        songs_type = 'Beat'
-      end
-    end
+    songs_type = if params[:type].present?
+                    params[:type]
+                  elsif beats_count == 0
+                    if tracks_count == 0 & reposts_count > 0
+                      'Repost'
+                    elsif tracks_count > 0
+                      'Track'
+                    end
+                  else
+                    'Beat'
+                  end
     case songs_type
     when 'Track'
       tracks.includes(:likes, :user).order(id: :desc).page(params[:page])
